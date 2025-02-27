@@ -33,7 +33,7 @@ async def main():
 
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
         result = await crawler.arun(
-            url="https://fahdmirza.com",
+            url="https://www.marca.com",
             config=crawl_config
         )
 
