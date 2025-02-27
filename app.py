@@ -12,7 +12,7 @@ class Blog(BaseModel):
 	
 async def main():
     llm_strategy = LLMExtractionStrategy(
-        provider="ollama/deepseek-r1:latest", 
+        provider="ollama/deepseek-llm:7b",
         api_token="none",
         schema=Blog.schema_json(),            
         extraction_type="schema",
