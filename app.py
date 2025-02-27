@@ -1,7 +1,7 @@
 import os
 import asyncio
 import json
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
@@ -12,6 +12,9 @@ class NewsArticle(BaseModel):
     summary: str  # Nuevo campo para el resumen
 
 async def main():
+    # Imprimir esquema para verificar que está correcto
+    print("Schema utilizado:", NewsArticle.schema_json())
+
     llm_strategy = LLMExtractionStrategy(
         provider="ollama/deepseek-llm:7b",
         api_token="none",
@@ -42,11 +45,30 @@ async def main():
         )
 
         if result.success:
-            data = json.loads(result.extracted_content)
-            print("Noticias extraídas:")
-            for article in data:
-                print(f"- {article['title']} ({article['date']})")
-                print(f"  Resumen: {article['summary']}\n")
+            extracted_content = result.extracted_content
+
+            # Verificar si el contenido extraído es válido
+            if not extracted_content:
+                print("Error: El contenido extraído está vacío.")
+                return
+
+            try:
+                data = json.loads(extracted_content)
+            except json.JSONDecodeError as e:
+                print("Error al decodificar JSON:", e)
+                print("Contenido recibido:", extracted_content)
+                return
+
+            print("Contenido extraído bruto:", data)  # Debugging
+
+            # Verificar si la estructura es la esperada
+            if isinstance(data, list):
+                print("Noticias extraídas:")
+                for article in data:
+                    print(f"- {article.get('title', 'Sin título')} ({article.get('date', 'Sin fecha')})")
+                    print(f"  Resumen: {article.get('summary', 'Sin resumen')}\n")
+            else:
+                print("Error: La respuesta no es una lista. Revisa la estructura de la extracción.")
 
             llm_strategy.show_usage()
         else:
