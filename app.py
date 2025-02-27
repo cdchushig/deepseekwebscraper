@@ -6,22 +6,26 @@ from typing import List
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
-class Blog(BaseModel):
+class NewsArticle(BaseModel):
     title: str
     date: str
-	
+    summary: str  # Nuevo campo para el resumen
+
 async def main():
     llm_strategy = LLMExtractionStrategy(
         provider="ollama/deepseek-llm:7b",
         api_token="none",
-        schema=Blog.schema_json(),            
+        schema=NewsArticle.schema_json(),
         extraction_type="schema",
-        instruction="Extract all blog posts objects with blog title and date from the content.",
-        chunk_token_threshold=1000,
+        instruction=(
+            "Extrae todos los artículos de noticias de la portada, obteniendo el título, "
+            "la fecha y un resumen corto del contenido principal."
+        ),
+        chunk_token_threshold=1500,  # Aumentado para más contexto
         overlap_rate=0.0,
         apply_chunking=True,
         input_format="markdown",
-        extra_args={"temperature": 0.0, "max_tokens": 800}
+        extra_args={"temperature": 0.0, "max_tokens": 500}  # Ajustado para resúmenes cortos
     )
 
     crawl_config = CrawlerRunConfig(
@@ -39,7 +43,11 @@ async def main():
 
         if result.success:
             data = json.loads(result.extracted_content)
-            print("Extracted items:", data)
+            print("Noticias extraídas:")
+            for article in data:
+                print(f"- {article['title']} ({article['date']})")
+                print(f"  Resumen: {article['summary']}\n")
+
             llm_strategy.show_usage()
         else:
             print("Error:", result.error_message)
